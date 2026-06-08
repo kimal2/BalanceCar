@@ -3,6 +3,7 @@
 #include "oled.h"
 #include "stdio.h"
 #include "usart.h"
+#include "string.h"
 
 #include "PIDTask.h"
 
@@ -16,13 +17,13 @@ void DisplayTask(void *argument)
     for(;;)
     {
         sprintf(disp_buf,"%.2f",roll);
-        OLED_ShowString(0,0,disp_buf,8);
+        OLED_ShowString(0,0,(uint8_t *)disp_buf,8);
 
         // sprintf(disp_buf,"%+06d",gz+170);
         // OLED_ShowString(0,1,disp_buf,8);
 
         sprintf(disp_buf,"%.1f,%.1f,%.1f",AnglePID.Kp,AnglePID.Ki,AnglePID.Kd);
-        OLED_ShowString(0,2,disp_buf,8);
+        OLED_ShowString(0,2,(uint8_t *)disp_buf,8);
                
         // sprintf(disp_buf,"roll:%+04.2f",roll);
         // OLED_ShowString(0,0,disp_buf,8);
@@ -45,7 +46,7 @@ void DisplayTask(void *argument)
         AnglePID.Ki,AnglePID.Kd);
         // sprintf(disp_buf,"t,ac:%f,%f\n",0.0f,AnglePID.actual);
         //OLED_ShowString(0,3,disp_buf,8);
-        HAL_UART_Transmit(&huart3,disp_buf,strlen(disp_buf),100);
+        HAL_UART_Transmit(&huart3,(const uint8_t *)disp_buf,strlen((char *)disp_buf),100);
 
         
         osDelay(50);

@@ -49,7 +49,7 @@ void StartBtCmd(void *argument)
 	{
 		if (bluetooth_Rxflag)
 		{
-			char *Tag = strtok(bluetooth_buf, ",");
+			char *Tag = strtok((char *)bluetooth_buf, ",");
 			if (strcmp(Tag, "slider") == 0) // Tag为slider，收到滑杆数据包
 			{
 				char *Name = strtok(NULL, ",");	 // 提取数据2，定义为滑杆名称

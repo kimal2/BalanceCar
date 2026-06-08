@@ -106,22 +106,22 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-  //OLED???
+  //OLED INIT
   OLED_Init();
   OLED_Clear();
 
-  //MPU6050???
+  //MPU6050 INIT
   MPU_Init();
 
-  //??PWM???
+  //Motor PWM INIT
   HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_4);
 
-  //??????????
+  //ENCODER INIT
   HAL_TIM_Encoder_Start(&htim2,TIM_CHANNEL_ALL);
   HAL_TIM_Encoder_Start(&htim4,TIM_CHANNEL_ALL);
 
-  //?????????
+  //UART INIT
   extern uint8_t databyte;
   UART_Start_Receive_IT(&huart3,&databyte,1);
 
