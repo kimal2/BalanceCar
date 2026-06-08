@@ -1,0 +1,43 @@
+# Keil MDK user-specific files
+*.uvguix.*
+
+# STM32CubeMX metadata
+.mxproject
+
+# Build output - MDK-ARM
+MDK-ARM/BalanceCar/
+MDK-ARM/DebugConfig/
+MDK-ARM/RTE/
+MDK-ARM/build/
+
+# Build artifacts
+*.o
+*.obj
+*.lst
+*.hex
+*.bin
+*.axf
+*.elf
+*.crf
+*.d
+*.dep
+*.lnp
+*.map
+*.htm
+*.build_log.htm
+*.scvd
+*.iex
+JLinkLog.txt
+
+# CMSIS Pack
+MDK-ARM/.cmsis/
+
+# eide plugin
+MDK-ARM/.eide/
+
+# VSCode local settings
+MDK-ARM/.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
