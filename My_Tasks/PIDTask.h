@@ -6,14 +6,19 @@
 extern PID_t AnglePID;
 extern PID_t SpeedPID;
 extern PID_t TurnPID;
+extern PID_t PositionPID;
+extern PID_t Gyro_PID;
 
 extern uint8_t Run_Flag;
 
 extern short ax, ay, az, gx, gy, gz;
 extern float LeftSpeed;
-extern    float RightSpeed;
-extern    float AvgSpeed;
-extern    float DifSpeed;
+extern float RightSpeed;
+extern float AvgSpeed;
+extern float DifSpeed;
+extern float AvgPosition;
+extern float target_position;
+extern float K_qk;
 
 #endif
 

@@ -9,8 +9,6 @@ uint8_t bluetooth_buf[100]; // 蓝牙接收缓冲区
 uint8_t bluetooth_Rxflag;	// 蓝牙接收标志位
 uint8_t databyte;			// 蓝牙接收数据
 
-
-
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if (huart->Instance == USART3)
@@ -92,9 +90,44 @@ void StartBtCmd(void *argument)
 					TurnPID.Kd = atof(Value); // 则把滑杆值赋值给转向环Kd
 				}
 
+				else if (strcmp(Name, "PositionKp") == 0) // 如果滑杆名称是PositionKp
+				{
+					PositionPID.Kp = atof(Value); // 则把滑杆值赋值给位置环Kp
+				}
+				else if (strcmp(Name, "PositionKi") == 0) // 如果滑杆名称是PositionKi
+				{
+					PositionPID.Ki = atof(Value); // 则把滑杆值赋值给位置环Ki
+				}
+				else if (strcmp(Name, "PositionKd") == 0) // 如果滑杆名称是PositionKd
+				{
+					PositionPID.Kd = atof(Value); // 则把滑杆值赋值给位置环Kd
+				}
+				else if (strcmp(Name, "GyroKp") == 0)
+				{
+					Gyro_PID.Kp = atof(Value);
+				}
+				else if (strcmp(Name, "GyroKi") == 0)
+				{
+					Gyro_PID.Ki = atof(Value);
+				}
+				else if (strcmp(Name, "GyroKd") == 0)
+				{
+					Gyro_PID.Kd = atof(Value);
+				}
+
+				else if (strcmp(Name, "Tpos") == 0) // 如果滑杆名称是PositionKd
+				{
+					target_position = atof(Value); // 则把滑杆值赋值给位置环Kd
+				}
+
 				else if (strcmp(Name, "offset") == 0) // 如果滑杆名称是TurnKd
 				{
 					AnglePID.Out_Offset = atof(Value); // 则把滑杆值赋值给转向环Kd
+				}
+
+				else if (strcmp(Name, "kqk") == 0)
+				{
+					K_qk = atof(Value); // 则把滑杆
 				}
 			}
 
@@ -123,21 +156,19 @@ void StartBtCmd(void *argument)
 				/*执行摇杆操作*/
 				// BtCmd.speed = LV / 25.0; // 把摇杆值LV乘以0.01赋值给角度环目标值
 				// BtCmd.turn = RH / 25.0;	 // 把摇杆值RH除以2赋值给速度环差值
-				
-				//填入数据
-				if(Run_Flag)
+
+				// 填入数据
+				if (Run_Flag)
 				{
 					extern osMessageQueueId_t BtCmdQueueHandle;
 					Bt_Cmd_t *BtCmd = pvPortMalloc(sizeof(Bt_Cmd_t));
 					BtCmd->speed = LV / 25.0f; // 把摇杆值LV乘以0.01赋值给角度环目标值
-					BtCmd->turn = RH / 25.0f;	 // 把摇杆值RH除以2赋值给速度环差值
-					osMessageQueuePut(BtCmdQueueHandle, &BtCmd,0,0);
+					BtCmd->turn = RH / 25.0f;  // 把摇杆值RH除以2赋值给速度环差值
+					osMessageQueuePut(BtCmdQueueHandle, &BtCmd, 0, 0);
 				}
-				
 			}
 
 			bluetooth_Rxflag = 0;
 		}
-		    
 	}
 }

@@ -46,6 +46,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
 
   uint32_t              uwPrescalerValue = 0U;
   uint32_t              pFLatency;
+
   HAL_StatusTypeDef     status = HAL_OK;
 
   /* Enable TIM3 clock */
@@ -73,12 +74,11 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   htim3.Instance = TIM3;
 
   /* Initialize TIMx peripheral as follow:
-
-  + Period = [(TIM3CLK/1000) - 1]. to have a (1/1000) s time base.
-  + Prescaler = (uwTimclock/1000000 - 1) to have a 1MHz counter clock.
-  + ClockDivision = 0
-  + Counter direction = Up
-  */
+   * Period = [(TIM3CLK/1000) - 1]. to have a (1/1000) s time base.
+   * Prescaler = (uwTimclock/1000000 - 1) to have a 1MHz counter clock.
+   * ClockDivision = 0
+   * Counter direction = Up
+   */
   htim3.Init.Period = (1000000U / 1000U) - 1U;
   htim3.Init.Prescaler = uwPrescalerValue;
   htim3.Init.ClockDivision = 0;
@@ -88,6 +88,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   status = HAL_TIM_Base_Init(&htim3);
   if (status == HAL_OK)
   {
+
     /* Start the TIM time Base generation in interrupt mode */
     status = HAL_TIM_Base_Start_IT(&htim3);
     if (status == HAL_OK)
