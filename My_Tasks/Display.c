@@ -50,9 +50,9 @@ void DisplayTask(void *argument)
         OLED_ShowString(0,7,(uint8_t *)disp_buf,8);
         
        
-        sprintf(disp_buf,"[plot,%f,%f,%f,%f,%f,%f,%f,%f]",PositionPID.target,
-            PositionPID.actual,SpeedPID.target,SpeedPID.actual,
-            AnglePID.target,AnglePID.actual,Gyro_PID.target,Gyro_PID.actual);
+        sprintf(disp_buf,"[plot,%f,%f,%f,%f]",
+            SpeedPID.target,SpeedPID.actual,
+            AnglePID.target,AnglePID.actual);
         //OLED_ShowString(0,3,disp_buf,8);
         HAL_UART_Transmit_DMA(&huart3,(const uint8_t *)disp_buf,strlen((char *)disp_buf));
 

@@ -7,7 +7,6 @@ extern PID_t AnglePID;
 extern PID_t SpeedPID;
 extern PID_t TurnPID;
 extern PID_t PositionPID;
-extern PID_t Gyro_PID;
 
 extern uint8_t Run_Flag;
 
@@ -19,6 +18,11 @@ extern float DifSpeed;
 extern float AvgPosition;
 extern float target_position;
 extern float K_qk;
+
+
+void LED_ON(void);
+void LED_OFF(void);
+
 
 #endif
 

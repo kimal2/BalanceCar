@@ -6,8 +6,6 @@ typedef struct {
     float Ki;
     float Kd;
 
-    float dt;//运行间隔时间 单位s
-
     float Out_Max;      // 输出限幅 (±out_limit)
     float Out_Min; //  输出最小值
     float integ_limit;    // 积分限幅
@@ -28,5 +26,6 @@ typedef struct {
 
 void PID_Calc(PID_t *p);
 void PID_Clear(PID_t *p);
+void PID_AngleCalc(PID_t *p, float gyro);
 
 #endif

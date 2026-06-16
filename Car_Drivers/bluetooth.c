@@ -48,10 +48,20 @@ void StartBtCmd(void *argument)
 		if (bluetooth_Rxflag)
 		{
 			char *Tag = strtok((char *)bluetooth_buf, ",");
+			if(Tag==NULL)
+			{
+				bluetooth_Rxflag = 0;
+				continue;
+			}
 			if (strcmp(Tag, "slider") == 0) // Tag为slider，收到滑杆数据包
 			{
 				char *Name = strtok(NULL, ",");	 // 提取数据2，定义为滑杆名称
 				char *Value = strtok(NULL, ","); // 提取数据3，定义为滑杆值
+				if(Name==NULL || Value==NULL || *Value=='\0')
+				{
+					bluetooth_Rxflag = 0;
+					continue;
+				}
 				/*执行滑杆操作*/
 				if (strcmp(Name, "AngleKp") == 0) // 如果滑杆名称是AngleKp
 				{
@@ -101,18 +111,6 @@ void StartBtCmd(void *argument)
 				else if (strcmp(Name, "PositionKd") == 0) // 如果滑杆名称是PositionKd
 				{
 					PositionPID.Kd = atof(Value); // 则把滑杆值赋值给位置环Kd
-				}
-				else if (strcmp(Name, "GyroKp") == 0)
-				{
-					Gyro_PID.Kp = atof(Value);
-				}
-				else if (strcmp(Name, "GyroKi") == 0)
-				{
-					Gyro_PID.Ki = atof(Value);
-				}
-				else if (strcmp(Name, "GyroKd") == 0)
-				{
-					Gyro_PID.Kd = atof(Value);
 				}
 
 				else if (strcmp(Name, "Tpos") == 0) // 如果滑杆名称是PositionKd

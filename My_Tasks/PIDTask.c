@@ -9,47 +9,33 @@
 
 #define GX_OFFSET -85
 
-PID_t Gyro_PID =
-    {
-        .Kp = 0.0f,
-        .Ki = 0.0f,
-        .Kd = 0.0,
-        .dt = 0.01,
-        .Out_Max = 3600,
-        .Out_Min = -3600,
-        .integ_limit = 3000,
-        .Out_Offset = 0,
-};
 
 PID_t AnglePID =
     {
-        .Kp = 272.19f,
-        .Ki = 0.0f,
-        .Kd = 296.56f,
-        .dt = 0.01,
-        .Out_Max = 200,
-        .Out_Min = -200,
-        .integ_limit = 200,
-        .Out_Offset = 0,
+        .Kp = 253.19f,
+        .Ki = 0,
+        .Kd = 3.443f,
+        .Out_Max = 3600,
+        .Out_Min = -3600,
+        .integ_limit = 2000,
+        .Out_Offset = 130,
 };
 
 PID_t SpeedPID =
     {
-        .Kp = 5.66f,
-        .Ki = 1.09f,
-        .Kd = 0.0,
-        .dt = 0.05,
+        .Kp = 5.637f,
+        .Ki = 0.47f,
+        .Kd = 0,
         .Out_Max = 30,
         .Out_Min = -30, // 速度环控制角度环，角度最大+-15
-        .integ_limit = 20,
+        .integ_limit = 15,
 };
 
 PID_t TurnPID =
     {
         .Kp = 1000.0f,
         .Ki = 500.0f,
-        .Kd = 0.0,
-        .dt = 0.05,
+        .Kd = 0,
         .Out_Max = 3600,
         .Out_Min = -3600, // 转向环控制速度环，速度最大+-50
         .integ_limit = 3000,
@@ -57,10 +43,9 @@ PID_t TurnPID =
 
 PID_t PositionPID =
     {
-        .Kp = 0.1237f, // 位置环比例系数（需实地调参）
-        .Ki = 0.0f,    // 位置环积分系数
-        .Kd = 0.1258f,
-        .dt = 0.05f,   // 50ms 更新一次，和速度环同步
+        .Kp = 0.0508f, // 位置环比例系数（需实地调参）
+        .Ki = 0,       // 位置环积分系数
+        .Kd = 0.2244f,
         .Out_Max = 20, // 输出限幅 ±10（给速度环的目标速度）
         .Out_Min = -20,
 };
@@ -86,7 +71,7 @@ float Position_Right = 0;  // 右轮累计位置
 float AvgPosition = 0;     // 平均位置
 float target_position = 0; // 目标位置
 // 前馈系数
-float K_qk = 1.81f;
+float K_qk = 1.177f;
 
 // 执行时间s
 uint32_t run_time;
@@ -113,6 +98,8 @@ void StartTaskBalance(void *argument)
     {
       Run_Flag = 0;
     }
+    if(Run_Flag) LED_ON();
+    else LED_OFF();
 
     static float target_speed;
     static float target_turn;
@@ -169,28 +156,11 @@ void StartTaskBalance(void *argument)
         static float Bt_V;
         static float Alpha_tgtSpeed = 0.9f;
         Bt_V = Alpha_tgtSpeed * Bt_V + (1 - Alpha_tgtSpeed) * target_speed;
-        // 位置环计算
-        if (fabs(target_speed) < 1e-5)
-        {
-          // 如果遥控目标速度小于1，则进行位置环控制
-          PositionPID.target = target_position;
-          PositionPID.actual = AvgPosition;
-          PID_Calc(&PositionPID);
-          SpeedPID.target = PositionPID.output;
-        }
-        else
-        {
-          // 如果遥控目标速度大于1，则进不行位置环控制
-          // 目标速度一阶低通滤波(10ms更新一次)
-
-          SpeedPID.target = Bt_V;
-          // SpeedPID.target = target_speed;
-          LeftSpeed = 0;
-          RightSpeed = 0;
-
-          AvgPosition = 0;
-          target_position = 0;
-        }
+        target_position += Bt_V*10 * 0.05f;
+        PositionPID.target = target_position;
+        PositionPID.actual = AvgPosition;
+        PID_Calc(&PositionPID);
+        SpeedPID.target = PositionPID.output;
 
         // 速度环计算
         SpeedPID.actual = AvgSpeed;
@@ -205,13 +175,8 @@ void StartTaskBalance(void *argument)
 
       // 角度环10ms
       AnglePID.actual = roll;
-      PID_Calc(&AnglePID);
-
-      //角速度环
-      Gyro_PID.target = AnglePID.output;
-      Gyro_PID.actual = gx / 32768.0f * 2000;
-      PID_Calc(&Gyro_PID);
-      AvgPWM = Gyro_PID.output;
+      PID_AngleCalc(&AnglePID,(gx) / 32768.0f * 2000);
+      AvgPWM = AnglePID.output;
 
       LeftPWM = AvgPWM + DifPWM / 2;
       RightPWM = AvgPWM - DifPWM / 2;
@@ -252,3 +217,14 @@ void StartTaskBalance(void *argument)
     osDelayUntil(tick);
   }
 }
+
+void LED_ON(void)
+{
+  HAL_GPIO_WritePin(GPIOC,GPIO_PIN_13,GPIO_PIN_RESET);
+}
+
+void LED_OFF(void)
+{
+  HAL_GPIO_WritePin(GPIOC,GPIO_PIN_13,GPIO_PIN_SET);
+}
+
