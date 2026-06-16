@@ -130,7 +130,6 @@ output = Kp × error + Ki × integral - Kd × gyro_rate
 | 按键 | 动作 | 功能 |
 |------|------|------|
 | `switch` | down | 启停切换 (`Run_Flag ^= 1`) |
-| `menu` | down | OLED 显示页切换 |
 
 ### UART 调试输出
 
