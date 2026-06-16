@@ -23,29 +23,10 @@ void PID_Calc(PID_t *p)
 	{
 		p->integral += p->error;
 		// === 积分限幅 ===
-		if (p->integral > p->integ_limit)
-		{
-			p->integral = p->integ_limit;
-		}
-		if (p->integral < -p->integ_limit)
-		{
-			p->integral = -p->integ_limit;
-		}
+		if (p->integral > p->integ_limit) p->integral = p->integ_limit;
+		if (p->integral < -p->integ_limit) p->integral = -p->integ_limit;
 	}
-	else
-	{
-		p->integral = 0;
-	}
-
-	// === 计算微分项 ===
-	if (p->Kd != 0)
-	{
-		p->derivative = (p->error - p->last_error);
-	}
-	else
-	{
-		p->derivative = 0;
-	}
+	else p->integral = 0;
 
 	// p->output = p->Kp*p->error + p->Ki*p->integral + p->Kd*p->derivative;//普通
 	p->output = p->Kp * p->error 
@@ -67,19 +48,13 @@ void PID_Calc(PID_t *p)
 	}
 
 	// 限幅后输出
-	if (p->output > p->Out_Max)
-	{
-		p->output = p->Out_Max;
-	}
-	if (p->output < p->Out_Min)
-	{
-		p->output = p->Out_Min;
-	}
+	if (p->output > p->Out_Max) p->output = p->Out_Max;
+	if (p->output < p->Out_Min) p->output = p->Out_Min;
 }
 
 void PID_AngleCalc(PID_t *p, float gyro)
 {
-		p->last_error = p->error;
+	p->last_error = p->error;
 	p->error = p->target - p->actual;
 
 	// === 计算积分项 ===
@@ -87,29 +62,10 @@ void PID_AngleCalc(PID_t *p, float gyro)
 	{
 		p->integral += p->error;
 		// === 积分限幅 ===
-		if (p->integral > p->integ_limit)
-		{
-			p->integral = p->integ_limit;
-		}
-		if (p->integral < -p->integ_limit)
-		{
-			p->integral = -p->integ_limit;
-		}
+		if (p->integral > p->integ_limit) p->integral = p->integ_limit;
+		if (p->integral < -p->integ_limit) p->integral = -p->integ_limit;
 	}
-	else
-	{
-		p->integral = 0;
-	}
-
-	// === 计算微分项 ===
-	if (p->Kd != 0)
-	{
-		p->derivative = (p->error - p->last_error);
-	}
-	else
-	{
-		p->derivative = 0;
-	}
+	else p->integral = 0;
 
 	// p->output = p->Kp*p->error + p->Ki*p->integral + p->Kd*p->derivative;//普通
 	p->output = p->Kp * p->error 
@@ -131,12 +87,6 @@ void PID_AngleCalc(PID_t *p, float gyro)
 	}
 
 	// 限幅后输出
-	if (p->output > p->Out_Max)
-	{
-		p->output = p->Out_Max;
-	}
-	if (p->output < p->Out_Min)
-	{
-		p->output = p->Out_Min;
-	}
+	if (p->output > p->Out_Max) p->output = p->Out_Max;
+	if (p->output < p->Out_Min) p->output = p->Out_Min;
 }

@@ -7,8 +7,8 @@
 #include "bluetooth.h"
 #include "encoder.h"
 
+/* GX漂移 */
 #define GX_OFFSET -85
-
 
 PID_t AnglePID =
     {
@@ -27,8 +27,8 @@ PID_t SpeedPID =
         .Ki = 0.47f,
         .Kd = 0,
         .Out_Max = 30,
-        .Out_Min = -30, // 速度环控制角度环，角度最大+-15
-        .integ_limit = 15,
+        .Out_Min = -30, // 速度环控制角度环，角度最大+-30
+        .integ_limit = 5,
 };
 
 PID_t TurnPID =
@@ -37,16 +37,16 @@ PID_t TurnPID =
         .Ki = 500.0f,
         .Kd = 0,
         .Out_Max = 3600,
-        .Out_Min = -3600, // 转向环控制速度环，速度最大+-50
+        .Out_Min = -3600,
         .integ_limit = 3000,
 };
 
 PID_t PositionPID =
     {
-        .Kp = 0.0508f, // 位置环比例系数（需实地调参）
-        .Ki = 0,       // 位置环积分系数
+        .Kp = 0.0508f,
+        .Ki = 0,
         .Kd = 0.2244f,
-        .Out_Max = 20, // 输出限幅 ±10（给速度环的目标速度）
+        .Out_Max = 20,
         .Out_Min = -20,
 };
 
@@ -66,56 +66,40 @@ float AvgSpeed;
 float DifSpeed;
 
 // ===== 位置环相关变量 =====
-float Position_Left = 0;   // 左轮累计位置（编码器脉冲数）
+float Position_Left = 0;   // 左轮累计位置
 float Position_Right = 0;  // 右轮累计位置
 float AvgPosition = 0;     // 平均位置
 float target_position = 0; // 目标位置
-// 前馈系数
+// 位置前馈系数
 float K_qk = 1.177f;
 
-// 执行时间s
+float Bt_V;
+
+// 执行时间
 uint32_t run_time;
-uint32_t run_time_gaplast, run_time_gapnow, run_time_gap;
 
 void StartTaskBalance(void *argument)
 {
   uint32_t tick = osKernelGetTickCount();
   for (;;)
   {
-    tick += 10;
-    // 计算时间
+    tick += 10; // 10ms执行一次
+    // 计算执行时间
     uint32_t start = DWT->CYCCNT;
-
+    // ===== 读取传感器 =====
     MPU_Get_AccelAndGyro(&ax, &ay, &az, &gx, &gy, &gz);
     gx -= GX_OFFSET;
     roll_acc = atan2(ay, az) * 180 / 3.1415926;
     roll_acc -= 0.3f;
     roll_gyro = roll + (gx) / 32768.0f * 2000 * 0.01f;
-    float Alpha = 0.02f;
+    float Alpha = 0.02f; // 互补滤波
     roll = Alpha * roll_acc + (1 - Alpha) * roll_gyro;
 
+    // ==== 跌倒检测 =====
     if (roll > 50 || roll < -50)
     {
       Run_Flag = 0;
     }
-    if(Run_Flag) LED_ON();
-    else LED_OFF();
-
-    static float target_speed;
-    static float target_turn;
-    // 取出指令
-    extern osMessageQueueId_t BtCmdQueueHandle;
-    Bt_Cmd_t *BtCmd;
-    if (osMessageQueueGet(BtCmdQueueHandle, &BtCmd, 0, 0) == osOK)
-    {
-      // 把参数写入PID
-      target_speed = BtCmd->speed;
-      target_turn = BtCmd->turn;
-      vPortFree(BtCmd);
-    }
-
-    static float Alpha_tgtTurn = 0.9f;
-    TurnPID.target = Alpha_tgtTurn * TurnPID.target + (1 - Alpha_tgtTurn) * target_turn;
 
     // ==== 防止超速 =====
     static uint8_t speed_max_time;
@@ -130,11 +114,32 @@ void StartTaskBalance(void *argument)
         speed_max_time = 0;
       }
     }
+    // === 指示灯 ===
+    if (Run_Flag)
+      LED_ON();
+    else
+      LED_OFF();
 
-    //===== 控制逻辑 =====
+    // === 取出指令 ===
+    static float target_speed;
+    static float target_turn;
+    extern osMessageQueueId_t BtCmdQueueHandle;
+    Bt_Cmd_t *BtCmd;
+    if (osMessageQueueGet(BtCmdQueueHandle, &BtCmd, 0, 0) == osOK) // 有内容才执行
+    {
+      target_speed = BtCmd->speed;
+      target_turn = BtCmd->turn;
+      vPortFree(BtCmd);
+    }
+
+    // === 转向一阶滤波 ===
+    static float Alpha_tgtTurn = 0.9f;
+    TurnPID.target = Alpha_tgtTurn * TurnPID.target + (1 - Alpha_tgtTurn) * target_turn;
+
+    // ===== 控制逻辑 =====
     if (Run_Flag)
     {
-      // 速度环 50ms更新一次
+      /* 速度环更新(50ms) */
       static uint8_t speed_updatecnt;
       speed_updatecnt++;
       if (speed_updatecnt == 5)
@@ -153,41 +158,50 @@ void StartTaskBalance(void *argument)
         AvgPosition = (Position_Left + Position_Right) / 2.0f;
 
         /* 蓝牙速度一阶滤波 */
-        static float Bt_V;
         static float Alpha_tgtSpeed = 0.9f;
         Bt_V = Alpha_tgtSpeed * Bt_V + (1 - Alpha_tgtSpeed) * target_speed;
-        target_position += Bt_V*10 * 0.05f;
+        /* 根据蓝牙速度 累加得到目标位置 */
+        if(Bt_V<1e-6&&Bt_V>-1e-6) {}
+        else 
+        {
+          target_position += Bt_V * 10 * 0.05f; 
+        if(target_position-AvgPosition>10) target_position = AvgPosition+10;
+        else if(target_position-AvgPosition<-10) target_position = AvgPosition-10;
+        }
+ 
+        
+        /* 位置环计算 */
         PositionPID.target = target_position;
         PositionPID.actual = AvgPosition;
         PID_Calc(&PositionPID);
         SpeedPID.target = PositionPID.output;
 
-        // 速度环计算
+        /* 速度环计算 */
         SpeedPID.actual = AvgSpeed;
         PID_Calc(&SpeedPID);
         AnglePID.target = -SpeedPID.output - K_qk * (target_position - AvgPosition);
 
-        // 角度环计算
+        /* 转向环计算 */
         TurnPID.actual = DifSpeed;
         PID_Calc(&TurnPID);
         DifPWM = TurnPID.output;
       }
 
-      // 角度环10ms
+      /* 角度环计算(10ms) */
       AnglePID.actual = roll;
-      PID_AngleCalc(&AnglePID,(gx) / 32768.0f * 2000);
+      PID_AngleCalc(&AnglePID, (gx) / 32768.0f * 2000);
       AvgPWM = AnglePID.output;
-
+      /* 分配左右轮PWM */
       LeftPWM = AvgPWM + DifPWM / 2;
       RightPWM = AvgPWM - DifPWM / 2;
-
       Set_Motor_Speed(LeftPWM, RightPWM);
 
+      /* 计算本次执行时间(run_time/72 (us) ) */
       uint32_t end = DWT->CYCCNT;
       run_time = end - start;
     }
 
-    else
+    else // 停机执行
     {
       Set_Motor_Speed(0, 0);
       PID_Clear(&AnglePID);
@@ -198,6 +212,7 @@ void StartTaskBalance(void *argument)
       Position_Left = 0;
       Position_Right = 0;
       AvgPosition = 0;
+      target_position = 0;
 
       speed_max_time = 0;
       LeftSpeed = 0;
@@ -207,12 +222,12 @@ void StartTaskBalance(void *argument)
       LeftPWM = 0;
       RightPWM = 0;
       AvgPWM = 0;
-    }
+      DifPWM = 0;
 
-    // 测试延迟时间
-    //  run_time_gapnow=tick;
-    //  run_time_gap=run_time_gapnow-run_time_gaplast;
-    //  run_time_gaplast=run_time_gapnow;
+      target_speed = 0;
+      target_turn = 0;
+      Bt_V = 0;
+    }
     // 绝对延迟10ms
     osDelayUntil(tick);
   }
@@ -220,11 +235,10 @@ void StartTaskBalance(void *argument)
 
 void LED_ON(void)
 {
-  HAL_GPIO_WritePin(GPIOC,GPIO_PIN_13,GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
 }
 
 void LED_OFF(void)
 {
-  HAL_GPIO_WritePin(GPIOC,GPIO_PIN_13,GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);
 }
-
