@@ -52,7 +52,11 @@ void DisplayTask(void *argument)
         OLED_ShowString(0, 7, (uint8_t *)disp_buf, 8);
 
         extern float Bt_V;
-        sprintf(disp_buf, "[plot,%f,%f,%f,%f,%f]",
+        // sprintf(disp_buf, "[plot,%f,%f,%f,%f,%f]",
+        //         SpeedPID.target, SpeedPID.actual,
+        //         AnglePID.target, AnglePID.actual,
+        //     Bt_V);
+        sprintf(disp_buf, "%f,%f,%f,%f,%f\n",
                 SpeedPID.target, SpeedPID.actual,
                 AnglePID.target, AnglePID.actual,
             Bt_V);

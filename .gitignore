@@ -38,6 +38,9 @@ MDK-ARM/.eide/
 # VSCode local settings
 MDK-ARM/.vscode/
 
+# Documentation
+docs/
+
 # OS files
 .DS_Store
 Thumbs.db
